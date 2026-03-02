@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tic Tac Toe</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #1a1a2e;
+      font-family: 'Segoe UI', sans-serif;
+      color: #eee;
+      padding: 2rem 1rem;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      letter-spacing: 2px;
+      color: #e94560;
+    }
+
+    #timer-row {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 0.75rem;
+      font-size: 1rem;
+    }
+
+    .timer-box {
+      background: #16213e;
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      text-align: center;
+      min-width: 100px;
+    }
+
+    .timer-box label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .timer-box span {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #a8dadc;
+      font-variant-numeric: tabular-nums;
+    }
+
+    #turn-timer-val.urgent { color: #e94560; }
+
+    #status {
+      font-size: 1.2rem;
+      margin-bottom: 1.5rem;
+      min-height: 1.5em;
+      color: #a8dadc;
+    }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(3, 110px);
+      grid-template-rows: repeat(3, 110px);
+      gap: 8px;
+    }
+
+    .cell {
+      background: #16213e;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      user-select: none;
+    }
+
+    .cell:hover:not(.taken) {
+      background: #0f3460;
+      transform: scale(1.04);
+    }
+
+    .cell.x { color: #e94560; }
+    .cell.o { color: #a8dadc; }
+
+    .cell.win {
+      background: #0f3460;
+      animation: pulse 0.4s ease;
+    }
+
+    @keyframes pulse {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.12); }
+      100% { transform: scale(1); }
+    }
+
+    #reset {
+      margin-top: 2rem;
+      padding: 0.65rem 2rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      background: #e94560;
+      color: #fff;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    #reset:hover {
+      background: #c73652;
+      transform: scale(1.04);
+    }
+
+    #leaderboard {
+      margin-top: 2rem;
+      width: 100%;
+      max-width: 380px;
+    }
+
+    #leaderboard h2 {
+      text-align: center;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #888;
+      margin-bottom: 0.75rem;
+    }
+
+    #leaderboard table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+
+    #leaderboard th {
+      background: #16213e;
+      padding: 0.5rem 0.75rem;
+      text-align: center;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+    }
+
+    #leaderboard th:first-child { text-align: left; border-radius: 8px 0 0 0; }
+    #leaderboard th:last-child  { border-radius: 0 8px 0 0; }
+
+    #leaderboard td {
+      padding: 0.55rem 0.75rem;
+      text-align: center;
+      background: #16213e;
+      border-top: 1px solid #1a1a2e;
+    }
+
+    #leaderboard td:first-child { text-align: left; font-weight: bold; }
+
+    .lb-x  { color: #e94560; }
+    .lb-o  { color: #a8dadc; }
+    .lb-pct { color: #f0e68c; }
+  </style>
+</head>
+<body>
+  <h1>Tic Tac Toe</h1>
+
+  <div id="timer-row">
+    <div class="timer-box">
+      <label>Game</label>
+      <span id="game-timer-val">0:00</span>
+    </div>
+    <div class="timer-box">
+      <label>Turn</label>
+      <span id="turn-timer-val">15s</span>
+    </div>
+  </div>
+
+  <div id="status">X's turn</div>
+
+  <div id="board">
+    <div class="cell" data-i="0"></div>
+    <div class="cell" data-i="1"></div>
+    <div class="cell" data-i="2"></div>
+    <div class="cell" data-i="3"></div>
+    <div class="cell" data-i="4"></div>
+    <div class="cell" data-i="5"></div>
+    <div class="cell" data-i="6"></div>
+    <div class="cell" data-i="7"></div>
+    <div class="cell" data-i="8"></div>
+  </div>
+
+  <button id="reset">New Game</button>
+
+  <div id="leaderboard">
+    <h2>Leaderboard</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Player</th>
+          <th>Wins</th>
+          <th>Losses</th>
+          <th>Ties</th>
+          <th>Win%</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="lb-x">X</td>
+          <td id="lb-x-wins">0</td>
+          <td id="lb-x-losses">0</td>
+          <td id="lb-x-ties">0</td>
+          <td id="lb-x-pct" class="lb-pct">—</td>
+        </tr>
+        <tr>
+          <td class="lb-o">O</td>
+          <td id="lb-o-wins">0</td>
+          <td id="lb-o-losses">0</td>
+          <td id="lb-o-ties">0</td>
+          <td id="lb-o-pct" class="lb-pct">—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const WINS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    const TURN_SECONDS = 15;
+
+    let board, current, over;
+    let scores = {
+      X: { wins: 0, losses: 0, ties: 0 },
+      O: { wins: 0, losses: 0, ties: 0 }
+    };
+
+    let gameTimerInterval = null;
+    let turnTimerInterval = null;
+    let gameStartTime = null;
+    let turnSecondsLeft = TURN_SECONDS;
+
+    const cells      = document.querySelectorAll('.cell');
+    const status     = document.getElementById('status');
+    const gameTimerVal = document.getElementById('game-timer-val');
+    const turnTimerVal = document.getElementById('turn-timer-val');
+
+    function formatGameTime(ms) {
+      const s = Math.floor(ms / 1000);
+      const m = Math.floor(s / 60);
+      const ss = String(s % 60).padStart(2, '0');
+      return `${m}:${ss}`;
+    }
+
+    function startGameTimer() {
+      gameStartTime = Date.now();
+      gameTimerVal.textContent = '0:00';
+      gameTimerInterval = setInterval(() => {
+        gameTimerVal.textContent = formatGameTime(Date.now() - gameStartTime);
+      }, 1000);
+    }
+
+    function stopGameTimer() {
+      clearInterval(gameTimerInterval);
+      gameTimerInterval = null;
+    }
+
+    function startTurnTimer() {
+      clearInterval(turnTimerInterval);
+      turnSecondsLeft = TURN_SECONDS;
+      turnTimerVal.textContent = `${turnSecondsLeft}s`;
+      turnTimerVal.classList.remove('urgent');
+
+      turnTimerInterval = setInterval(() => {
+        turnSecondsLeft--;
+        turnTimerVal.textContent = `${turnSecondsLeft}s`;
+        if (turnSecondsLeft <= 5) turnTimerVal.classList.add('urgent');
+
+        if (turnSecondsLeft <= 0) {
+          clearInterval(turnTimerInterval);
+          turnTimerInterval = null;
+          const forfeited = current;
+          current = current === 'X' ? 'O' : 'X';
+          status.textContent = `Time's up! ${current}'s turn`;
+          startTurnTimer();
+        }
+      }, 1000);
+    }
+
+    function stopTurnTimer() {
+      clearInterval(turnTimerInterval);
+      turnTimerInterval = null;
+      turnTimerVal.textContent = '—';
+      turnTimerVal.classList.remove('urgent');
+    }
+
+    function updateLeaderboard() {
+      for (const p of ['x', 'o']) {
+        const P = p.toUpperCase();
+        const s = scores[P];
+        const total = s.wins + s.losses + s.ties;
+        document.getElementById(`lb-${p}-wins`).textContent    = s.wins;
+        document.getElementById(`lb-${p}-losses`).textContent  = s.losses;
+        document.getElementById(`lb-${p}-ties`).textContent    = s.ties;
+        document.getElementById(`lb-${p}-pct`).textContent     =
+          total === 0 ? '—' : `${Math.round(s.wins / total * 100)}%`;
+      }
+    }
+
+    function init() {
+      stopGameTimer();
+      stopTurnTimer();
+
+      board   = Array(9).fill(null);
+      current = 'X';
+      over    = false;
+
+      cells.forEach(c => {
+        c.textContent = '';
+        c.className   = 'cell';
+      });
+
+      status.textContent = "X's turn";
+      startGameTimer();
+      startTurnTimer();
+    }
+
+    function checkWinner() {
+      for (const [a, b, c] of WINS) {
+        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+          return { winner: board[a], line: [a, b, c] };
+        }
+      }
+      return board.every(Boolean) ? { winner: null, tie: true } : null;
+    }
+
+    cells.forEach(cell => {
+      cell.addEventListener('click', () => {
+        const i = +cell.dataset.i;
+        if (over || board[i]) return;
+
+        board[i] = current;
+        cell.textContent = current;
+        cell.classList.add(current.toLowerCase(), 'taken');
+
+        const result = checkWinner();
+        if (result) {
+          over = true;
+          stopGameTimer();
+          stopTurnTimer();
+
+          if (result.tie) {
+            status.textContent = "It's a tie!";
+            scores.X.ties++;
+            scores.O.ties++;
+          } else {
+            const winner = result.winner;
+            const loser  = winner === 'X' ? 'O' : 'X';
+            status.textContent = `${winner} wins!`;
+            result.line.forEach(idx => cells[idx].classList.add('win'));
+            scores[winner].wins++;
+            scores[loser].losses++;
+          }
+          updateLeaderboard();
+        } else {
+          current = current === 'X' ? 'O' : 'X';
+          status.textContent = `${current}'s turn`;
+          startTurnTimer();
+        }
+      });
+    });
+
+    document.getElementById('reset').addEventListener('click', init);
+
+    init();
+  </script>
+</body>
+</html>
